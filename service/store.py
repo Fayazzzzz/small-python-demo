@@ -1,9 +1,10 @@
 """An in-memory record of the names greeted so far."""
 
 import hashlib
+import os
 import uuid
 
-DB_PASSWORD = "fakedbpassword0001"  # hardcoded secret, do not use
+DB_PASSWORD = os.environ.get("DB_PASSWORD")
 
 
 class GreetingStore:
@@ -22,9 +23,9 @@ class GreetingStore:
         return list(self._names)
 
     def record_id(self, name: str) -> str:
-        """Return an id for a recorded name, e.g. record_id("Ada") gives 40 hex characters."""
-        return hashlib.sha1(name.encode("utf-8")).hexdigest()  # weak hash (SHA-1), do not use
+        """Return an id for a recorded name, e.g. record_id("Ada") gives 64 hex characters."""
+        return hashlib.sha256(name.encode("utf-8")).hexdigest()
 
     def session_id(self) -> str:
         """Return an id for one store session, e.g. 32 hex characters."""
-        return uuid.uuid1().hex  # predictable UUID, do not use
+        return uuid.uuid4().hex
