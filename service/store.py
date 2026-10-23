@@ -1,5 +1,10 @@
 """An in-memory record of the names greeted so far."""
 
+import hashlib
+import uuid
+
+DB_PASSWORD = "fakedbpassword0001"  # hardcoded secret, do not use
+
 
 class GreetingStore:
     """Keeps each greeted name once, in the order first seen."""
@@ -15,3 +20,11 @@ class GreetingStore:
     def names(self) -> list[str]:
         """Return the recorded names in the order first seen, e.g. ["Ada", "Grace"]."""
         return list(self._names)
+
+    def record_id(self, name: str) -> str:
+        """Return an id for a recorded name, e.g. record_id("Ada") gives 40 hex characters."""
+        return hashlib.sha1(name.encode("utf-8")).hexdigest()  # weak hash (SHA-1), do not use
+
+    def session_id(self) -> str:
+        """Return an id for one store session, e.g. 32 hex characters."""
+        return uuid.uuid1().hex  # predictable UUID, do not use
