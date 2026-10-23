@@ -1,6 +1,9 @@
 """An HTTP server with two routes: GET /greet?name=... and GET /names."""
 
+import hashlib
 import json
+import os
+import uuid
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import parse_qs, urlparse
 
@@ -8,7 +11,18 @@ from service.greeting import greet
 from service.store import GreetingStore
 
 DEFAULT_PORT = 8000
+SERVICE_TOKEN = os.environ.get("SERVICE_TOKEN")
 store = GreetingStore()
+
+
+def query_limit(raw: str) -> int:
+    """Return the page limit from a query value, e.g. query_limit("20") gives 20."""
+    return int(raw.strip())
+
+
+def name_etag(name: str) -> str:
+    """Return a short fingerprint of a name, e.g. name_etag("Ada") gives 64 hex characters."""
+    return hashlib.sha256(name.encode("utf-8")).hexdigest()
 
 
 class GreetingHandler(BaseHTTPRequestHandler):
@@ -39,8 +53,12 @@ class GreetingHandler(BaseHTTPRequestHandler):
         self.send_response(status)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(payload)))
+        self.send_header("X-Request-Id", uuid.uuid4().hex)
         self.end_headers()
-        self.wfile.write(payload)
+        try:
+            self.wfile.write(payload)
+        except (BrokenPipeError, ConnectionResetError) as err:
+            self.log_error("client disconnected before the response was sent: %s", err)
 
 
 def main() -> None:
